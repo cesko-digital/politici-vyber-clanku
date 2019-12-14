@@ -7,6 +7,7 @@ from flask_restful import Api, Resource
 import requests
 import unidecode
 import unicodedata
+from app.data.token import token_string
 
 import json
 from decimal import Decimal
@@ -21,7 +22,7 @@ class View(Resource):
     root = 'https://api.monitora.cz/transparency/'
     @staticmethod
     def politicians():
-        response = requests.get(View.root + 'politicians/', headers={'Authorization': 'Token ThwtYIS10zUEQ3KIgguqZ4Rd4H6BgTJ7'})
+        response = requests.get(View.root + 'politicians/', headers={'Authorization': token_string})
         response.encoding = 'utf-8'
         keys = ['id', 'name','search_query', 'party']
         data = [{key: item[key] for key in keys} for item in response.json()]
@@ -29,7 +30,7 @@ class View(Resource):
 
     @staticmethod
     def articlesForPolitician(id):
-        response = requests.get(View.root + 'articles/' + str(id), headers={'Authorization': 'Token ThwtYIS10zUEQ3KIgguqZ4Rd4H6BgTJ7'}, params={"count": 100})
+        response = requests.get(View.root + 'articles/' + str(id), headers={'Authorization': token_string}, params={"count": 100})
         response.encoding = 'utf-8'
         keys = ['source', 'title', 'url', 'shares', 'perex', 'text']
         data = [{key: item[key] for key in keys} for item in response.json()]
@@ -64,9 +65,9 @@ class View(Resource):
         if id is None:
             requests.post(View.root + 'politicians/',
                                  json=politician_dict,
-                                 headers={'Authorization': 'Token ThwtYIS10zUEQ3KIgguqZ4Rd4H6BgTJ7'})
+                                 headers={'Authorization': token_string})
         id = View.searchPoliticianByName(politician_dict["name"])
-        response = requests.get(View.root + 'articles/' + str(id), headers={'Authorization': 'Token ThwtYIS10zUEQ3KIgguqZ4Rd4H6BgTJ7'}, params={"count": 100})
+        response = requests.get(View.root + 'articles/' + str(id), headers={'Authorization': token_string}, params={"count": 100})
         #response.encoding = 'utf-8'
         data = helper.process(' '.join([item["text"] for item in response.json()]))
         return json.dumps(data)
@@ -74,7 +75,7 @@ class View(Resource):
 
     @staticmethod
     def topicsForPoliticianById(id):
-        response = requests.get(View.root + 'articles/' + str(id), headers={'Authorization': 'Token ThwtYIS10zUEQ3KIgguqZ4Rd4H6BgTJ7'}, params={"count": 100})
+        response = requests.get(View.root + 'articles/' + str(id), headers={'Authorization': token_string}, params={"count": 100})
         #response.encoding = 'utf-8'
         data = helper.process(' '.join([item["text"] for item in response.json()]))
         return json.dumps(data)
@@ -85,7 +86,7 @@ class View(Resource):
         politician_dict = raw_dict['data']
         response = requests.post(View.root + 'politicians/',
                                 json={"name": "Martin Charvát", "party": "ODS"},
-                                headers={'Authorization': 'Token ThwtYIS10zUEQ3KIgguqZ4Rd4H6BgTJ7'})
+                                headers={'Authorization': token_string})
         return View.politicians()
 
 

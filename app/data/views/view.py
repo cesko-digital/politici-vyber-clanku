@@ -29,17 +29,21 @@ class View(Resource):
 
     @staticmethod
     def articlesForPolitician(id):
-        response = requests.get(View.root + 'articles/' + str(id), headers={'Authorization': 'Token ThwtYIS10zUEQ3KIgguqZ4Rd4H6BgTJ7'}, params={"count": 1})
+        response = requests.get(View.root + 'articles/' + str(id), headers={'Authorization': 'Token ThwtYIS10zUEQ3KIgguqZ4Rd4H6BgTJ7'}, params={"count": 100})
         response.encoding = 'utf-8'
         keys = ['source', 'title', 'url', 'shares', 'perex', 'text']
         data = [{key: item[key] for key in keys} for item in response.json()]
+        topics = helper.process(' '.join([item["text"] for item in response.json()]))
+        topic_map = {}
         for index, item in enumerate(data):
             data[index]['perex'] = str(item['perex'].replace("<span class=\"article-hl\">", "").replace("</span>",""))
-            text = str(remove_diacritic(data[index]['text'])).replace("\\n", " ")
-            data[index]['clean-text'] = text
-        with open('articles.json', 'w') as outfile:
-            json.dump(data, outfile)
-        return json.dumps(data)
+            for topic in topics:
+                if topic['topic'] in item['text']:
+                    if topic['topic'] not in topic_map:
+                        topic_map[topic['topic']] = [item['title']]
+                    else:
+                        topic_map[topic['topic']].append(item['title'])
+        return json.dumps({"articles": data, "topic_map": topic_map})
 
 
     @staticmethod

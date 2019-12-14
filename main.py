@@ -32,13 +32,16 @@ def articlesForPolitician(politician_id):
     return View.articlesForPolitician(politician_id)
 
 @app.route('/topics/<int:politician_id>', methods=['GET'])
-def topicsForPolitician(politician_id):
-    return View.topicsForPolitician(politician_id)
+def topicsForPoliticianById(politician_id):
+    return View.topicsForPoliticianById(politician_id)
+
+@app.route('/topics', methods=['POST'])
+def topicsForPoliticianByQuery():
+    return View.topicsForPoliticianByQuery()
 
 @app.route('/topics', methods=['GET'])
 def topics():
     return View.topics()
-
 
 @app.route('/politicians', methods=['POST'])
 def addPolitician():

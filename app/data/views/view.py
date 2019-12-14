@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, make_response
 from sqlalchemy.sql.elements import and_, or_
 from sqlalchemy import distinct
 from app.data.models import db
-from app.data.helper import Helper, remove_diacritic, is_about_politician
+from app.data.helper import Helper, remove_diacritic, is_about_politician, decimal_default, flatten
 from flask_restful import Api, Resource
 import requests
 import unidecode
@@ -15,19 +15,6 @@ stats = Blueprint('stats', __name__)
 helper = Helper()
 helper.load()
 
-def decimal_default(obj):
-    if isinstance(obj, Decimal):
-        if Decimal(obj) % 1 == 0:
-            return int(obj)
-        elif Decimal(obj) % 1 != 0:
-            return str(round(obj, 4))
-    elif isinstance(obj, int):
-        return int(obj)
-    elif isinstance(obj, str):
-        return str(obj)
-    else:
-        return str(obj)
-    raise TypeError
 
 
 class View(Resource):
@@ -50,7 +37,6 @@ class View(Resource):
             data[index]['perex'] = str(item['perex'].replace("<span class=\"article-hl\">", "").replace("</span>",""))
             text = str(remove_diacritic(data[index]['text'])).replace("\\n", " ")
             data[index]['clean-text'] = text
-            return json.dumps(is_about_politician("Andrej Babis", "ANO", text))
         with open('articles.json', 'w') as outfile:
             json.dump(data, outfile)
         return json.dumps(data)
@@ -60,16 +46,33 @@ class View(Resource):
     def topics():
         pass
 
+    @staticmethod
+    def searchPoliticianByName(name):
+        for pol in json.loads(View.politicians()):
+            if name == pol["name"]:
+                return pol["id"]
 
     @staticmethod
-    def topics():
-        pass
+    def topicsForPoliticianByQuery():
+        raw_dict = request.get_json(force=True)
+        politician_dict = raw_dict['data']
+        id = View.searchPoliticianByName(politician_dict["name"])
+        if id is None:
+            requests.post(View.root + 'politicians/',
+                                 json=politician_dict,
+                                 headers={'Authorization': 'Token ThwtYIS10zUEQ3KIgguqZ4Rd4H6BgTJ7'})
+        id = View.searchPoliticianByName(politician_dict["name"])
+        response = requests.get(View.root + 'articles/' + str(id), headers={'Authorization': 'Token ThwtYIS10zUEQ3KIgguqZ4Rd4H6BgTJ7'}, params={"count": 100})
+        #response.encoding = 'utf-8'
+        data = helper.process(' '.join([item["text"] for item in response.json()]))
+        return json.dumps(data)
+
 
     @staticmethod
-    def topicsForPolitician(id):
-        response = requests.get(View.root + 'articles/' + str(id), headers={'Authorization': 'Token ThwtYIS10zUEQ3KIgguqZ4Rd4H6BgTJ7'}, params={"count": 1})
-        response.encoding = 'utf-8'
-        data = [helper.create_ngrams(item["text"]) for item in response.json()]
+    def topicsForPoliticianById(id):
+        response = requests.get(View.root + 'articles/' + str(id), headers={'Authorization': 'Token ThwtYIS10zUEQ3KIgguqZ4Rd4H6BgTJ7'}, params={"count": 100})
+        #response.encoding = 'utf-8'
+        data = helper.process(' '.join([item["text"] for item in response.json()]))
         return json.dumps(data)
 
     @staticmethod

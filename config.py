@@ -9,7 +9,7 @@ mssql_db_hostname = ''
 
 
 DEBUG = True
-PORT = 8000
+PORT = 5000
 HOST = "0.0.0.0"
 SQLALCHEMY_ECHO = True
 SQLALCHEMY_TRACK_MODIFICATIONS = True

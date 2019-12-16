@@ -16,6 +16,8 @@ stats = Blueprint('stats', __name__)
 helper = Helper()
 helper.load()
 
+article_keys = ['id', 'source', 'title', 'url', 'shares', 'perex', 'text']
+politician_keys = ['id', 'name','search_query', 'party']
 
 
 class View(Resource):
@@ -24,16 +26,14 @@ class View(Resource):
     def politicians():
         response = requests.get(View.root + 'politicians/', headers={'Authorization': token_string})
         response.encoding = 'utf-8'
-        keys = ['id', 'name','search_query', 'party']
-        data = [{key: item[key] for key in keys} for item in response.json()]
+        data = [{key: item[key] for key in politician_keys} for item in response.json()]
         return json.dumps(data)
 
     @staticmethod
     def articlesForPolitician(id):
         response = requests.get(View.root + 'articles/' + str(id), headers={'Authorization': token_string}, params={"count": 100})
-        response.encoding = 'utf-8'
-        keys = ['source', 'title', 'url', 'shares', 'perex', 'text']
-        data = [{key: item[key] for key in keys} for item in response.json()]
+        #response.encoding = 'utf-8'
+        data = [{key: item[key] for key in article_keys} for item in response.json()]
         topics = helper.process(' '.join([item["text"] for item in response.json()]))
         topic_map = {}
         for index, item in enumerate(data):
@@ -41,9 +41,9 @@ class View(Resource):
             for topic in topics:
                 if topic['topic'] in item['text']:
                     if topic['topic'] not in topic_map:
-                        topic_map[topic['topic']] = [item['title']]
+                        topic_map[topic['topic']] = [item['id']]
                     else:
-                        topic_map[topic['topic']].append(item['title'])
+                        topic_map[topic['topic']].append(item['id'])
         return json.dumps({"articles": data, "topic_map": topic_map})
 
 
